@@ -114,7 +114,7 @@ var API="https://script.google.com/macros/s/AKfycbwHxUMfAHIUZhKsERc2feYzgSH-d0fs
 var $=function(id){return document.getElementById(id)};
 var mem={get:function(k){try{return localStorage.getItem(k)||""}catch(e){return ""}},set:function(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}};
 var pass=mem.get("sh4.pass"),me="",D=null,busy=false,mt=null,tab="post",stop="",first=true,open={};
-var STOP={unset:["いまは使えません","合言葉がまだ設定されていません。管理者に伝えてください。急ぎの連絡は、電話でお願いします。"],wait:["少しお待ちください","合言葉のまちがいが続いたため、5分ほど止めています。急ぎの連絡は、電話でお願いします。"],net:["つながりません","通信できませんでした。電波のよいところで、もう一度おためしください。急ぎの連絡は、電話でお願いします。"]};
+var STOP={unset:["いまは使えません","合言葉がまだ設定されていません。管理者に伝えてください。急ぎの連絡は、電話でお願いします。"],wait:["少しお待ちください","合言葉のまちがいが続いたため、15分ほど止めています。急ぎの連絡は、電話でお願いします。"],net:["つながりません","通信できませんでした。電波のよいところで、もう一度おためしください。急ぎの連絡は、電話でお願いします。"]};
 var ERR={busy:"連絡が集中しています。少しおいて、もう一度お試しください",text:"内容を書いてください",gone:"その連絡が見つかりません",self:"自分の連絡は、ほかの人が確認します"};
 function say(t,err){var m=$("msg");m.textContent=t;m.className="msg"+(err?" err":"");m.hidden=false;clearTimeout(mt);mt=setTimeout(function(){m.hidden=true},err?6000:3500)}
 function call(req,ok,quiet){req.pass=pass;busy=true;
