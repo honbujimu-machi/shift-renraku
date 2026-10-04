@@ -86,8 +86,8 @@ textarea{min-height:88px;resize:vertical;display:block}
   <div class="load" id="load">読み込んでいます…</div>
   <section class="card" id="passBox" hidden>
     <h2>合言葉を入れてください</h2>
-    <p class="sub">チームで共通の合言葉です。この端末で初めて開いたときだけ入れます。</p>
-    <input id="pass" type="password" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="合言葉">
+    <p class="sub">チームで共通の合言葉です（6文字まで）。この端末で初めて開いたときだけ入れます。</p>
+    <input id="pass" type="password" inputmode="text" maxlength="6" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="合言葉">
     <button class="go" id="passOk" type="button">開く</button>
     <p class="note">合言葉が分からないときは、管理者に聞いてください。<br>急ぎの連絡は、電話でお願いします。</p>
   </section>
@@ -207,7 +207,7 @@ $("send").onclick=function(){var t=$("text").value.trim();if(!t){$("text").focus
   if(d==="x"&&!day){$("day").focus();say("日付を選んでください",true);return}
   if(busy)return;this.disabled=true;
   call({a:"post",name:me,kind:k.textContent,day:day,text:t},function(){$("text").value="";tab="list";show();window.scrollTo(0,0);say("送りました。受付にメールが届きます")})};
-$("passOk").onclick=function(){var v=$("pass").value.trim();if(!v){$("pass").focus();return}if(busy)return;pass=v;call({a:"list"})};
+$("passOk").onclick=function(){var v=$("pass").value.trim().slice(0,6);if(!v){$("pass").focus();return}if(busy)return;pass=v;call({a:"list"})};
 $("pass").addEventListener("keydown",function(e){if(e.key==="Enter")$("passOk").click()});
 $("retry").onclick=function(){stop="";first=true;show();if(pass)call({a:"list"})};
 show();
