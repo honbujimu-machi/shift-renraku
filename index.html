@@ -75,6 +75,15 @@ textarea{min-height:88px;resize:vertical;display:block}
 .load{text-align:center;color:var(--muted);padding:40px 0}
 .msg{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));margin:auto;max-width:560px;background:var(--ink);color:var(--surface);border-radius:12px;padding:12px 16px;z-index:9;text-align:center;font-weight:700}
 .msg.err{background:var(--r);color:#fff}
+/* 押せるものの反応：マウスを乗せると黄色いふち＋少し濃く、押している間は少し沈む（指で押す端末では「押している間」だけ） */
+button{transition:filter .12s ease,box-shadow .12s ease,transform .08s ease,background-color .12s ease}
+@media (hover:hover){
+button:not(:disabled):hover{filter:brightness(.95);box-shadow:0 0 0 3px #f5c400}
+.tabs button:hover,.h:hover{filter:none;box-shadow:none;background:var(--surface-2)}
+.tabs button:hover{color:var(--ink)}
+}
+button:not(:disabled):active{transform:scale(.98);filter:brightness(.88)}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
 [hidden]{display:none!important}
 :focus-visible{outline:3px solid var(--b);outline-offset:2px}
 </style></head><body>
