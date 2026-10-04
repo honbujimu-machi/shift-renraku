@@ -76,7 +76,7 @@ textarea{min-height:88px;resize:vertical;display:block}
 :focus-visible{outline:3px solid var(--b);outline-offset:2px}
 </style></head><body>
 <header>
-  <div class="hd"><b>シフト連絡</b><button class="who" id="who" type="button" hidden><span id="whoN"></span><small>切り替え</small></button></div>
+  <div class="hd"><b>シフト連絡</b><button class="who" id="who" type="button" hidden><span id="whoN"></span><small>変更</small></button></div>
   <div class="tabs" id="tabs" role="tablist" hidden>
     <button type="button" role="tab" data-t="post" aria-selected="true">連絡する</button>
     <button type="button" role="tab" data-t="list" aria-selected="false">届いた連絡<span class="n" id="cnt" hidden></span></button>
@@ -85,13 +85,19 @@ textarea{min-height:88px;resize:vertical;display:block}
 <main>
   <div class="load" id="load">読み込んでいます…</div>
   <section class="card" id="passBox" hidden>
-    <h2>あなたの合言葉を入れてください</h2>
-    <p class="sub">合言葉は、1人ずつ違います。入れると、あなたの名前で開きます。この端末では、次から聞きません。</p>
-    <input id="pass" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="合言葉">
+    <h2>合言葉を入れてください</h2>
+    <p class="sub">チームで共通の合言葉です。この端末で初めて開いたときだけ入れます。</p>
+    <input id="pass" type="password" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="合言葉">
     <button class="go" id="passOk" type="button">開く</button>
     <p class="note">合言葉が分からないときは、管理者に聞いてください。<br>急ぎの連絡は、電話でお願いします。</p>
   </section>
   <section class="card" id="stopBox" hidden><h2 id="stopT"></h2><p class="sub" id="stopS" style="margin:0"></p><button class="go" id="retry" type="button">もう一度ためす</button></section>
+  <section class="card" id="nameBox" hidden>
+    <h2>あなたの名前</h2>
+    <p class="sub">連絡や返信に、この名前が付きます。この端末では、次から聞きません。一覧に名前がないときは、管理者に伝えてください。</p>
+    <select id="nameSel" aria-label="名前を選ぶ"></select>
+    <button class="go" id="nameOk" type="button">この名前で使う</button>
+  </section>
   <section class="card" id="post" hidden>
     <p class="rule">⏰ 1分でも遅れるときは、必ず連絡。</p>
     <span class="f">何の連絡ですか</span>
@@ -113,9 +119,9 @@ textarea{min-height:88px;resize:vertical;display:block}
 var API="https://script.google.com/macros/s/AKfycbwHxUMfAHIUZhKsERc2feYzgSH-d0fs_aQax2ypcmaE2MAJN01hAYcA-042XmgXGcGyMg/exec";
 var $=function(id){return document.getElementById(id)};
 var mem={get:function(k){try{return localStorage.getItem(k)||""}catch(e){return ""}},set:function(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k)}catch(e){}}};
-var pass=mem.get("sh4.pass"),me="",D=null,busy=false,mt=null,tab="post",stop="",first=true,open={};
+var pass=mem.get("sh4.pass"),me=mem.get("sh4.name"),D=null,busy=false,mt=null,tab="post",stop="",first=true,open={},askName=false;
 var STOP={unset:["いまは使えません","合言葉がまだ設定されていません。管理者に伝えてください。急ぎの連絡は、電話でお願いします。"],wait:["少しお待ちください","合言葉のまちがいが続いたため、15分ほど止めています。急ぎの連絡は、電話でお願いします。"],net:["つながりません","通信できませんでした。電波のよいところで、もう一度おためしください。急ぎの連絡は、電話でお願いします。"]};
-var ERR={busy:"連絡が集中しています。少しおいて、もう一度お試しください",text:"内容を書いてください",gone:"その連絡が見つかりません",self:"自分の連絡は、ほかの人が確認します"};
+var ERR={name:"名簿にない名前です。右上の「変更」から選び直してください",busy:"連絡が集中しています。少しおいて、もう一度お試しください",text:"内容を書いてください",gone:"その連絡が見つかりません",self:"自分の連絡は、ほかの人が確認します"};
 function say(t,err){var m=$("msg");m.textContent=t;m.className="msg"+(err?" err":"");m.hidden=false;clearTimeout(mt);mt=setTimeout(function(){m.hidden=true},err?6000:3500)}
 function call(req,ok,quiet){req.pass=pass;busy=true;
   fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(req),redirect:"follow",credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer"})
@@ -125,7 +131,7 @@ function call(req,ok,quiet){req.pass=pass;busy=true;
       if(c==="unset"||c==="wait"){D=null;stop=c;show();return}
       if(c==="pass"){stop="";D=null;if(pass)say("合言葉が違います",true);pass="";mem.set("sh4.pass","");show();$("pass").value="";return}
       say(ERR[c]||"うまくいきませんでした。もう一度お試しください",true);return}
-    D=r;me=r.me;stop="";mem.set("sh4.pass",pass);if(r.newId)open[r.newId]=true;show();if(ok)ok()})
+    D=r;stop="";mem.set("sh4.pass",pass);if(me&&D.names.indexOf(me)<0){me="";mem.set("sh4.name","")}if(r.newId)open[r.newId]=true;show();if(ok)ok()})
   .catch(function(){busy=false;$("send").disabled=false;
     if(first||!D){first=false;D=null;stop="net";show();return}
     if(!quiet)say("通信できませんでした。少しおいて、もう一度お試しください",true)})}
@@ -137,12 +143,13 @@ function addDay(d,n){var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);return new Date(
 function dayLabel(d){var m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return "日付なし";var w=["日","月","火","水","木","金","土"][new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()];
   var p=d===D.today?"今日 ":d===addDay(D.today,1)?"明日 ":d<D.today?"過ぎた日（まだ確認されていません） ":"";return p+Number(m[2])+"/"+Number(m[3])+"("+w+")"}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
-/* いま出す画面を1つに決める：読み込み中 → 合言葉 → 連絡する／届いた連絡 */
+/* いま出す画面を1つに決める：読み込み中 → 合言葉 → 名前 → 連絡する／届いた連絡 */
 function show(){
-  var loading=first&&!!pass&&!D&&!stop,needPass=!D&&!loading,ready=!!D;
+  var loading=first&&!!pass&&!D&&!stop,needPass=!D&&!loading,needName=!!D&&(!me||askName),ready=!!D&&!needName;
   $("load").hidden=!loading;
   $("stopBox").hidden=!(needPass&&stop);if(stop){$("stopT").textContent=STOP[stop][0];$("stopS").textContent=STOP[stop][1]}
-  $("passBox").hidden=!needPass||!!stop;
+  $("passBox").hidden=!needPass||!!stop;$("nameBox").hidden=!needName;
+  if(needName)drawName();
   $("tabs").hidden=!ready;$("who").hidden=!ready;$("post").hidden=!ready||tab!=="post";$("list").hidden=!ready||tab!=="list";
   if(!ready)return;
   $("whoN").textContent=san(me);
@@ -151,6 +158,11 @@ function show(){
   $("cnt").hidden=!n;$("cnt").textContent=n;
   drawList()}
 /* 開いておく連絡：ほかの人の確認待ち、自分がいま送った連絡、自分で開いた連絡。あとは閉じておく */
+function drawName(){var sel=$("nameSel"),names=D.names||[],o;
+  if(sel.dataset.sig!==names.join("|")){sel.dataset.sig=names.join("|");sel.innerHTML="";
+    o=el("option",null,names.length?"選んでください":"名簿がまだありません");o.value="";sel.appendChild(o);
+    names.forEach(function(n){var p=el("option",null,n);p.value=n;sel.appendChild(p)})}
+  if(names.indexOf(me)>=0)sel.value=me}
 function isOpen(t){return open[t.id]!=null?open[t.id]:(!t.seenAt&&t.name!==me)}
 function drawList(){
   var box=$("list"),keep={},a=document.activeElement,foc=a&&a.dataset?a.dataset.re:null;
@@ -182,10 +194,11 @@ function drawList(){
     var rb=el("button",null,"送る");rb.type="button";rb.onclick=function(){var v=inp.value.trim();if(!v){inp.focus();return}open[t.id]=true;act({a:"reply",id:t.id,text:v},"送りました",function(){inp.value=""})};
     inp.addEventListener("keydown",function(e){if(e.isComposing||e.keyCode===229)return;if(e.key==="Enter"){e.preventDefault();rb.click()}});
     re.appendChild(inp);re.appendChild(rb);bd.appendChild(re);c.appendChild(bd);box.appendChild(c);if(foc===t.id)inp.focus()}}
-function act(req,okMsg,after){if(busy)return;if(after)after();call(req,function(){say(okMsg)})}
+function act(req,okMsg,after){if(busy)return;req.name=me;if(after)after();call(req,function(){say(okMsg)})}
 function press(box,b){[].forEach.call(box.children,function(c){c.setAttribute("aria-pressed",String(c===b))})}
 $("tabs").onclick=function(e){var b=e.target.closest("button");if(!b)return;tab=b.dataset.t;show();window.scrollTo(0,0);if(tab==="list"&&!busy)call({a:"list"},null,true)};
-$("who").onclick=function(){pass="";me="";D=null;open={};mem.set("sh4.pass","");$("pass").value="";tab="post";show();$("pass").focus()};
+$("who").onclick=function(){askName=true;show()};
+$("nameOk").onclick=function(){var v=$("nameSel").value;if(!v){say("名前を選んでください",true);return}me=v;mem.set("sh4.name",v);askName=false;open={};show()};
 $("kind").onclick=function(e){var b=e.target.closest("button");if(b)press(this,b)};
 $("dayC").onclick=function(e){var b=e.target.closest("button");if(!b)return;press(this,b);var x=b.dataset.d==="x";$("day").hidden=!x;if(x){if(!$("day").value)$("day").value=addDay(D.today,2);$("day").min=D.today;$("day").focus()}};
 $("send").onclick=function(){var t=$("text").value.trim();if(!t){$("text").focus();say("内容を書いてください",true);return}
@@ -193,13 +206,13 @@ $("send").onclick=function(){var t=$("text").value.trim();if(!t){$("text").focus
   var day=d==="x"?$("day").value:addDay(D.today,Number(d));
   if(d==="x"&&!day){$("day").focus();say("日付を選んでください",true);return}
   if(busy)return;this.disabled=true;
-  call({a:"post",kind:k.textContent,day:day,text:t},function(){$("text").value="";tab="list";show();window.scrollTo(0,0);say("送りました。受付にメールが届きます")})};
+  call({a:"post",name:me,kind:k.textContent,day:day,text:t},function(){$("text").value="";tab="list";show();window.scrollTo(0,0);say("送りました。受付にメールが届きます")})};
 $("passOk").onclick=function(){var v=$("pass").value.trim();if(!v){$("pass").focus();return}if(busy)return;pass=v;call({a:"list"})};
 $("pass").addEventListener("keydown",function(e){if(e.key==="Enter")$("passOk").click()});
 $("retry").onclick=function(){stop="";first=true;show();if(pass)call({a:"list"})};
 show();
 if(pass)call({a:"list"});
-setInterval(function(){if(!document.hidden&&!busy&&D)call({a:"list"},null,true)},30000);
+setInterval(function(){if(!document.hidden&&!busy&&D&&me&&!askName)call({a:"list"},null,true)},30000);
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&!busy&&D)call({a:"list"},null,true)});
 })();
 </script></body></html>
