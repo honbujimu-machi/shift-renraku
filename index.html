@@ -188,7 +188,7 @@ function drawList(){
     var ms=el("div","msgs");[{by:t.name,at:t.at,text:t.text}].concat(t.msgs).forEach(function(m){var mm=m.by===me,d=el("div","m"+(mm?" me":""));
       d.appendChild(el("small",null,(mm?"あなた":san(m.by))+"　"+fmt(m.at)));d.appendChild(el("span",null,m.text));ms.appendChild(d)});bd.appendChild(ms);
     if(t.seenAt)bd.appendChild(el("div","stt ok","✓ "+(t.seenBy===me?"あなた":san(t.seenBy))+"が確認しました（"+fmt(t.seenAt)+"）"));
-    else if(mine)bd.appendChild(el("div","stt w","⏳ まだ確認されていません。確認されると、ここに名前が出ます"));
+    else if(mine)bd.appendChild(el("div","stt w","⏳ まだ確認されていません。ほかの人が確認か返信をすると、ここに名前が出ます"));
     else{var b=el("button","ack","✓ "+san(t.name)+"の連絡を確認しました");b.type="button";b.onclick=function(){open[t.id]=true;act({a:"seen",id:t.id},"確認済みにしました")};bd.appendChild(b)}
     var re=el("div","re"),inp=el("input"),ph=mine?"追加で伝える":san(t.name)+"に返信する";inp.maxLength=300;inp.placeholder=ph;inp.setAttribute("aria-label",ph);inp.dataset.re=t.id;if(keep[t.id])inp.value=keep[t.id];
     var rb=el("button",null,"送る");rb.type="button";rb.onclick=function(){var v=inp.value.trim();if(!v){inp.focus();return}open[t.id]=true;act({a:"reply",id:t.id,text:v},"送りました",function(){inp.value=""})};
