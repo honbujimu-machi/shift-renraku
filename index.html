@@ -75,6 +75,7 @@ textarea{min-height:88px;resize:vertical;display:block}
 .load{text-align:center;color:var(--muted);padding:40px 0}
 .msg{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));margin:auto;max-width:560px;background:var(--ink);color:var(--surface);border-radius:12px;padding:12px 16px;z-index:9;text-align:center;font-weight:700}
 .msg.err{background:var(--r);color:#fff}
+.msg{pointer-events:none}
 /* 押せるものの反応：マウスを乗せると黄色いふち＋少し濃く、押している間は少し沈む（指で押す端末では「押している間」だけ） */
 button{transition:filter .12s ease,box-shadow .12s ease,transform .08s ease,background-color .12s ease}
 @media (hover:hover){
@@ -84,6 +85,7 @@ button:not(:disabled):hover{filter:brightness(.95);box-shadow:0 0 0 3px #f5c400}
 }
 button:not(:disabled):active{transform:scale(.98);filter:brightness(.88)}
 @media (prefers-reduced-motion:reduce){button{transition:none}}
+.en .h{grid-template-columns:86px minmax(0,1fr) auto 18px}.en .kind{font-size:13px}.en .st{font-size:11px}.en .chips button{font-size:14px;line-height:1.2}.en .tabs button{font-size:15px}
 [hidden]{display:none!important}
 :focus-visible{outline:3px solid var(--b);outline-offset:2px}
 </style></head><body>
@@ -134,32 +136,53 @@ var mem={get:function(k){try{return localStorage.getItem(k)||""}catch(e){return 
 var pass=mem.get("sh4.pass"),me=mem.get("sh4.name"),D=null,busy=false,mt=null,tab="post",stop="",first=true,open={},askName=false,arm="",armT=null;
 var STOP={unset:["いまは使えません","合言葉がまだ設定されていません。管理者に伝えてください。急ぎの連絡は、電話でお願いします。"],wait:["少しお待ちください","合言葉のまちがいが続いたため、15分ほど止めています。急ぎの連絡は、電話でお願いします。"],net:["つながりません","通信できませんでした。電波のよいところで、もう一度おためしください。急ぎの連絡は、電話でお願いします。"]};
 var ERR={name:"名簿にない名前です。右上の「変更」から選び直してください",busy:"連絡が集中しています。少しおいて、もう一度お試しください",text:"内容を書いてください",gone:"その連絡が見つかりません",self:"自分の連絡は、ほかの人が確認します"};
-function say(t,err){var m=$("msg");m.textContent=t;m.className="msg"+(err?" err":"");m.hidden=false;clearTimeout(mt);mt=setTimeout(function(){m.hidden=true},err?6000:3500)}
-function call(req,ok,quiet){req.pass=pass;busy=true;
-  fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(req),redirect:"follow",credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer"})
+/* 表示の言葉。右上の名前が Simon のときは英語（英国）。書かれた連絡の文そのものは訳さない */
+var EN={"シフト連絡":"Shift messages","変更":"Change","連絡する":"Send a message","届いた連絡":"Messages","読み込んでいます…":"Loading…","合言葉を入れてください":"Enter the passcode","チームで共通の合言葉です（6文字まで）。この端末で初めて開いたときだけ入れます。":"This is the team's shared passcode (up to 6 characters). You only need to enter it the first time on this device.","開く":"Open","合言葉が分からないときは、管理者に聞いてください。":"If you don't know the passcode, please ask a manager.","急ぎの連絡は、電話でお願いします。":"If it's urgent, please phone.","もう一度ためす":"Try again","あなたの名前":"Your name","連絡や返信に、この名前が付きます。この端末では、次から聞きません。一覧に名前がないときは、管理者に伝えてください。":"Your messages and replies will show this name. You won't be asked again on this device. If your name isn't on the list, please tell a manager.","この名前で使う":"Use this name","⏰ 1分でも遅れるときは、必ず連絡。":"⏰ Running even a minute late? Always let us know.","何の連絡ですか":"What's it about?","遅れ":"Late","休み":"Absent","早退":"Early finish","その他":"Other","いつのシフトですか":"Which shift?","今日":"Today","明日":"Tomorrow","ほかの日":"Another day","内容（何分遅れるか・理由）":"Details (how late, and why)","例：電車が遅れて、10分ほど遅れます":"e.g. My train's delayed – I'll be about 10 minutes late","受付とチームに送る":"Send to reception and the team","送ると受付にメールが届き、「届いた連絡」に並びます。":"Reception gets an email, and your message appears under Messages.","日付を選ぶ":"Choose a date","名前を選ぶ":"Choose your name","合言葉":"Passcode","いまは使えません":"Not available just now","合言葉がまだ設定されていません。管理者に伝えてください。急ぎの連絡は、電話でお願いします。":"The passcode hasn't been set up yet. Please tell a manager. If it's urgent, please phone.","少しお待ちください":"Please wait a moment","合言葉のまちがいが続いたため、15分ほど止めています。急ぎの連絡は、電話でお願いします。":"Too many wrong passcodes, so this page is paused for about 15 minutes. If it's urgent, please phone.","つながりません":"Can't connect","通信できませんでした。電波のよいところで、もう一度おためしください。急ぎの連絡は、電話でお願いします。":"We couldn't connect. Please try again somewhere with a better signal. If it's urgent, please phone.","名簿にない名前です。右上の「変更」から選び直してください":"Your name isn't on the staff list. Tap “Change” at the top right and choose again.","連絡が集中しています。少しおいて、もう一度お試しください":"It's busy at the moment. Please try again shortly.","内容を書いてください":"Please add some details","その連絡が見つかりません":"That message can't be found","自分の連絡は、ほかの人が確認します":"Someone else needs to acknowledge your own message","合言葉が違います":"That passcode isn't right","うまくいきませんでした。もう一度お試しください":"Something went wrong. Please try again.","通信できませんでした。少しおいて、もう一度お試しください":"Couldn't connect. Please try again in a moment.","前の操作がまだ終わっていません。少しお待ちください":"Still working on the last action. Please wait a moment.","選んでください":"Please choose","名簿がまだありません":"No staff list yet","いま出ている連絡はありません":"No messages at the moment","対象の日が過ぎた連絡は、ここには出ません（記録は残ります）":"Messages for past dates aren't shown here (a record is kept).","あなた":"You","確認済み":"Acknowledged","確認待ち":"Pending","⏳ まだ確認されていません。ほかの人が確認か返信をすると、ここに名前が出ます":"⏳ Not acknowledged yet. Once someone acknowledges or replies, their name will appear here.","追加で伝える":"Add a note","送る":"Send","本当に削除する（もう一度押す）":"Really delete? Tap again","この連絡を削除する":"Delete this message","消すと、全員の画面から消えます。元に戻せません（記録はシートに残ります）":"This removes it for everyone and can't be undone (a record is kept).","確認済みにしました":"Marked as acknowledged","送りました":"Sent","削除しました":"Deleted","名前を選んでください":"Please choose your name","日付を選んでください":"Please choose a date","送りました。受付にメールが届きます":"Sent. Reception will get an email.","日付なし":"No date"};
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],seq=0;
+function en(){return /simon/i.test(me)}
+function T(s){return en()&&EN[s]||s}
+function say(t,err){var m=$("msg");m.textContent=T(t);m.className="msg"+(err?" err":"");m.hidden=false;clearTimeout(mt);mt=setTimeout(function(){m.hidden=true},err?6000:3500)}
+/* 通信。返事が来ないまま止まらないよう、時間で打ち切る（一覧は20秒・送信は30秒）。
+   quiet＝うしろで動く読み込み。その間もボタンは効く。あとから始めた通信があれば、古い読み込みの結果は捨てる */
+function call(req,ok,quiet){req.pass=pass;var my=++seq,done=false,ac=window.AbortController?new AbortController():null;if(!quiet)busy=true;
+  var to=setTimeout(function(){if(ac){try{ac.abort()}catch(e){}}fail()},req.a==="list"?20000:30000);
+  function end(){if(done)return false;done=true;clearTimeout(to);if(!quiet){busy=false;$("send").disabled=false}return true}
+  function fail(){if(!end())return;if(quiet&&my!==seq)return;
+    if(first&&req.a==="list"&&!req.re){req.re=1;call(req,ok,quiet);return} /* 開いたときは、1回だけ自動でやり直す */
+    if(first||!D){first=false;D=null;stop="net";show();return}
+    if(!quiet)say("通信できませんでした。少しおいて、もう一度お試しください",true)}
+  fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(req),redirect:"follow",credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer",signal:ac?ac.signal:undefined})
   .then(function(res){if(!res.ok)throw new Error("http");return res.json()})
-  .then(function(r){busy=false;first=false;$("send").disabled=false;
+  .then(function(r){if(!end())return;if(quiet&&my!==seq)return;first=false;
     if(!r||!r.ok){var c=r&&r.code;
       if(c==="unset"||c==="wait"){D=null;stop=c;show();return}
       if(c==="pass"){stop="";D=null;if(pass)say("合言葉が違います",true);pass="";mem.set("sh4.pass","");show();$("pass").value="";return}
       say(ERR[c]||"うまくいきませんでした。もう一度お試しください",true);return}
     D=r;stop="";mem.set("sh4.pass",pass);if(me&&D.names.indexOf(me)<0){me="";mem.set("sh4.name","")}if(r.newId)open[r.newId]=true;show();if(ok)ok()})
-  .catch(function(){busy=false;$("send").disabled=false;
-    if(first||!D){first=false;D=null;stop="net";show();return}
-    if(!quiet)say("通信できませんでした。少しおいて、もう一度お試しください",true)})}
-function san(n){return n+"さん"}
+  .catch(fail)}
+function waitMsg(){say("前の操作がまだ終わっていません。少しお待ちください",true)}
+function san(n){return en()?n:n+"さん"}
 function hm(iso){var m=String(iso||"").match(/T(\d{2}):(\d{2})/);return m?Number(m[1])+":"+m[2]:""}
 function md(iso){var m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?Number(m[2])+"/"+Number(m[3]):""}
-function fmt(iso){return md(iso)+" "+hm(iso)}
+function dmy(iso){var m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?Number(m[3])+" "+MON[Number(m[2])-1]:""}
+function fmt(iso){return en()?dmy(iso)+", "+hm(iso):md(iso)+" "+hm(iso)}
 function addDay(d,n){var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]+n)).toISOString().slice(0,10)}
-function dayLabel(d){var m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return "日付なし";var w=["日","月","火","水","木","金","土"][new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()];
+function dayLabel(d){var m=String(d||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return T("日付なし");
+  if(en()){var we=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()],pe=d===D.today?"Today · ":d===addDay(D.today,1)?"Tomorrow · ":d<D.today?"Past date (not yet acknowledged) · ":"";return pe+we+" "+dmy(d)}
+  var w=["日","月","火","水","木","金","土"][new Date(Date.UTC(+m[1],+m[2]-1,+m[3])).getUTCDay()];
   var p=d===D.today?"今日 ":d===addDay(D.today,1)?"明日 ":d<D.today?"過ぎた日（まだ確認されていません） ":"";return p+Number(m[2])+"/"+Number(m[3])+"("+w+")"}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+/* はじめから画面にある言葉（見出し・ボタン・説明）を覚えておき、言葉が変わったら入れかえる */
+var TN=[],AT=[],curL="";
+(function walk(p){for(var c=p.firstChild;c;c=c.nextSibling){if(c.nodeType===3){if(c.nodeValue.trim())TN.push([c,c.nodeValue])}else if(c.nodeType===1&&c.id!=="list"&&c.id!=="msg"&&c.tagName!=="SCRIPT"&&c.tagName!=="SELECT")walk(c)}})(document.body);
+[["text","placeholder"],["day","aria-label"],["nameSel","aria-label"],["pass","aria-label"]].forEach(function(a){AT.push([$(a[0]),a[1],$(a[0]).getAttribute(a[1])])});
+function applyLang(){var l=en()?"en":"ja";if(l===curL)return;curL=l;document.documentElement.lang=l;document.body.className=l;
+  TN.forEach(function(x){var k=x[1].trim();x[0].nodeValue=l==="en"&&EN[k]?EN[k]:x[1]});AT.forEach(function(a){a[0].setAttribute(a[1],T(a[2]))});$("nameSel").dataset.sig=""}
 /* いま出す画面を1つに決める：読み込み中 → 合言葉 → 名前 → 連絡する／届いた連絡 */
-function show(){
+function show(){applyLang();
   var loading=first&&!!pass&&!D&&!stop,needPass=!D&&!loading,needName=!!D&&(!me||askName),ready=!!D&&!needName;
   $("load").hidden=!loading;
-  $("stopBox").hidden=!(needPass&&stop);if(stop){$("stopT").textContent=STOP[stop][0];$("stopS").textContent=STOP[stop][1]}
+  $("stopBox").hidden=!(needPass&&stop);if(stop){$("stopT").textContent=T(STOP[stop][0]);$("stopS").textContent=T(STOP[stop][1])}
   $("passBox").hidden=!needPass||!!stop;$("nameBox").hidden=!needName;
   if(needName)drawName();
   $("tabs").hidden=!ready;$("who").hidden=!ready;$("post").hidden=!ready||tab!=="post";$("list").hidden=!ready||tab!=="list";
@@ -172,7 +195,7 @@ function show(){
 /* 開いておく連絡：ほかの人の確認待ち、自分がいま送った連絡、自分で開いた連絡。あとは閉じておく */
 function drawName(){var sel=$("nameSel"),names=D.names||[],o;
   if(sel.dataset.sig!==names.join("|")){sel.dataset.sig=names.join("|");sel.innerHTML="";
-    o=el("option",null,names.length?"選んでください":"名簿がまだありません");o.value="";sel.appendChild(o);
+    o=el("option",null,T(names.length?"選んでください":"名簿がまだありません"));o.value="";sel.appendChild(o);
     names.forEach(function(n){var p=el("option",null,n);p.value=n;sel.appendChild(p)})}
   if(names.indexOf(me)>=0)sel.value=me}
 function isOpen(t){return open[t.id]!=null?open[t.id]:(!t.seenAt&&t.name!==me)}
@@ -180,40 +203,41 @@ function drawList(){
   var box=$("list"),keep={},a=document.activeElement,foc=a&&a.dataset?a.dataset.re:null;
   [].forEach.call(box.querySelectorAll("input[data-re]"),function(i){if(i.value)keep[i.dataset.re]=i.value});
   box.innerHTML="";
-  if(!D.threads.length){box.appendChild(el("div","card empty","いま出ている連絡はありません"))}
+  if(!D.threads.length){box.appendChild(el("div","card empty",T("いま出ている連絡はありません")))}
   var days={},order=[];
   D.threads.forEach(function(t){var k=t.day||"";if(!days[k]){days[k]=[];order.push(k)}days[k].push(t)});
   order.sort();
   order.forEach(function(k){box.appendChild(el("div","sec",dayLabel(k)));
     days[k].sort(function(x,y){return (x.seenAt?1:0)-(y.seenAt?1:0)||(x.at<y.at?1:-1)}).forEach(card)});
-  box.appendChild(el("p","note","対象の日が過ぎた連絡は、ここには出ません（記録は残ります）"));
+  box.appendChild(el("p","note",T("対象の日が過ぎた連絡は、ここには出ません（記録は残ります）")));
   function card(t){var mine=t.name===me,op=isOpen(t),c=el("section","row "+(t.seenAt?"done":"wait"));
     var h=el("button","h"),ki=["遅れ","休み","早退"].indexOf(t.kind);h.type="button";h.setAttribute("aria-expanded",String(op));
-    h.appendChild(el("span","kind"+(ki>=0?" k"+ki:""),t.kind));
-    var mid=el("span");mid.appendChild(el("b",null,mine?"あなた":san(t.name)));
-    mid.appendChild(el("span","d",(t.at.slice(0,10)===t.day?hm(t.at):fmt(t.at))+" に連絡"+(t.msgs.length?"・返信"+t.msgs.length+"件":"")));h.appendChild(mid);
-    h.appendChild(el("span","st "+(t.seenAt?"ok":"w"),t.seenAt?"確認済み":"確認待ち"));
+    h.appendChild(el("span","kind"+(ki>=0?" k"+ki:""),T(t.kind)));
+    var mid=el("span");mid.appendChild(el("b",null,mine?T("あなた"):san(t.name)));
+    var when=t.at.slice(0,10)===t.day?hm(t.at):fmt(t.at),nr=t.msgs.length;
+    mid.appendChild(el("span","d",en()?"Sent "+when+(nr?" · "+nr+(nr===1?" reply":" replies"):""):when+" に連絡"+(nr?"・返信"+nr+"件":"")));h.appendChild(mid);
+    h.appendChild(el("span","st "+(t.seenAt?"ok":"w"),T(t.seenAt?"確認済み":"確認待ち")));
     h.appendChild(el("span","ar",op?"▲":"▼"));
     h.onclick=function(){open[t.id]=!op;drawList()};c.appendChild(h);
     if(!op){box.appendChild(c);return}
     var bd=el("div","bd");
     var ms=el("div","msgs");[{by:t.name,at:t.at,text:t.text}].concat(t.msgs).forEach(function(m){var mm=m.by===me,d=el("div","m"+(mm?" me":""));
-      d.appendChild(el("small",null,(mm?"あなた":san(m.by))+"　"+fmt(m.at)));d.appendChild(el("span",null,m.text));ms.appendChild(d)});bd.appendChild(ms);
-    if(t.seenAt)bd.appendChild(el("div","stt ok","✓ "+(t.seenBy===me?"あなた":san(t.seenBy))+"が確認しました（"+fmt(t.seenAt)+"）"));
-    else if(mine)bd.appendChild(el("div","stt w","⏳ まだ確認されていません。ほかの人が確認か返信をすると、ここに名前が出ます"));
-    else{var b=el("button","ack","✓ "+san(t.name)+"の連絡を確認しました");b.type="button";b.onclick=function(){open[t.id]=true;act({a:"seen",id:t.id},"確認済みにしました")};bd.appendChild(b)}
-    var re=el("div","re"),inp=el("input"),ph=mine?"追加で伝える":san(t.name)+"に返信する";inp.maxLength=300;inp.placeholder=ph;inp.setAttribute("aria-label",ph);inp.dataset.re=t.id;if(keep[t.id])inp.value=keep[t.id];
-    var rb=el("button",null,"送る");rb.type="button";rb.onclick=function(){var v=inp.value.trim();if(!v){inp.focus();return}open[t.id]=true;act({a:"reply",id:t.id,text:v},"送りました",function(){inp.value=""})};
+      d.appendChild(el("small",null,(mm?T("あなた"):san(m.by))+"　"+fmt(m.at)));d.appendChild(el("span",null,m.text));ms.appendChild(d)});bd.appendChild(ms);
+    if(t.seenAt)bd.appendChild(el("div","stt ok",en()?"✓ Acknowledged by "+(t.seenBy===me?"you":t.seenBy)+" ("+fmt(t.seenAt)+")":"✓ "+(t.seenBy===me?"あなた":san(t.seenBy))+"が確認しました（"+fmt(t.seenAt)+"）"));
+    else if(mine)bd.appendChild(el("div","stt w",T("⏳ まだ確認されていません。ほかの人が確認か返信をすると、ここに名前が出ます")));
+    else{var b=el("button","ack",en()?"✓ Acknowledge "+t.name+"’s message":"✓ "+san(t.name)+"の連絡を確認しました");b.type="button";b.onclick=function(){open[t.id]=true;act({a:"seen",id:t.id},"確認済みにしました")};bd.appendChild(b)}
+    var re=el("div","re"),inp=el("input"),ph=mine?T("追加で伝える"):en()?"Reply to "+t.name:san(t.name)+"に返信する";inp.maxLength=300;inp.placeholder=ph;inp.setAttribute("aria-label",ph);inp.dataset.re=t.id;if(keep[t.id])inp.value=keep[t.id];
+    var rb=el("button",null,T("送る"));rb.type="button";rb.onclick=function(){var v=inp.value.trim();if(!v){inp.focus();return}open[t.id]=true;act({a:"reply",id:t.id,text:v},"送りました",function(){inp.value=""})};
     inp.addEventListener("keydown",function(e){if(e.isComposing||e.keyCode===229)return;if(e.key==="Enter"){e.preventDefault();rb.click()}});
     re.appendChild(inp);re.appendChild(rb);bd.appendChild(re);
-    var on=arm===t.id,db=el("button","del"+(on?" on":""),on?"本当に削除する（もう一度押す）":"この連絡を削除する");db.type="button";db.dataset.del=t.id;
-    db.onclick=function(){if(busy)return;open[t.id]=true;
+    var on=arm===t.id,db=el("button","del"+(on?" on":""),T(on?"本当に削除する（もう一度押す）":"この連絡を削除する"));db.type="button";db.dataset.del=t.id;
+    db.onclick=function(){if(busy){waitMsg();return}open[t.id]=true;
       if(arm!==t.id){arm=t.id;clearTimeout(armT);armT=setTimeout(function(){arm="";if(D&&me)drawList()},6000);drawList();return}
       arm="";clearTimeout(armT);act({a:"del",id:t.id},"削除しました")};
-    bd.appendChild(db);if(on)bd.appendChild(el("p","delnote","消すと、全員の画面から消えます。元に戻せません（記録はシートに残ります）"));c.appendChild(bd);box.appendChild(c);if(foc===t.id)inp.focus()}}
-function act(req,okMsg,after){if(busy)return;req.name=me;if(after)after();call(req,function(){say(okMsg)})}
+    bd.appendChild(db);if(on)bd.appendChild(el("p","delnote",T("消すと、全員の画面から消えます。元に戻せません（記録はシートに残ります）")));c.appendChild(bd);box.appendChild(c);if(foc===t.id)inp.focus()}}
+function act(req,okMsg,after){if(busy){waitMsg();return}req.name=me;if(after)after();call(req,function(){say(okMsg)})}
 function press(box,b){[].forEach.call(box.children,function(c){c.setAttribute("aria-pressed",String(c===b))})}
-$("tabs").onclick=function(e){var b=e.target.closest("button");if(!b)return;tab=b.dataset.t;show();window.scrollTo(0,0);if(tab==="list"&&!busy)call({a:"list"},null,true)};
+$("tabs").onclick=function(e){var b=e.target.closest("button");if(!b)return;tab=b.dataset.t;show();window.scrollTo(0,0);if(tab==="list")call({a:"list"},null,true)};
 $("who").onclick=function(){askName=true;show()};
 $("nameOk").onclick=function(){var v=$("nameSel").value;if(!v){say("名前を選んでください",true);return}me=v;mem.set("sh4.name",v);askName=false;open={};show()};
 $("kind").onclick=function(e){var b=e.target.closest("button");if(b)press(this,b)};
@@ -222,9 +246,9 @@ $("send").onclick=function(){var t=$("text").value.trim();if(!t){$("text").focus
   var k=$("kind").querySelector('[aria-pressed="true"]'),d=$("dayC").querySelector('[aria-pressed="true"]').dataset.d;
   var day=d==="x"?$("day").value:addDay(D.today,Number(d));
   if(d==="x"&&!day){$("day").focus();say("日付を選んでください",true);return}
-  if(busy)return;this.disabled=true;
-  call({a:"post",name:me,kind:k.textContent,day:day,text:t},function(){$("text").value="";tab="list";show();window.scrollTo(0,0);say("送りました。受付にメールが届きます")})};
-$("passOk").onclick=function(){var v=$("pass").value.trim().slice(0,6);if(!v){$("pass").focus();return}if(busy)return;pass=v;call({a:"list"})};
+  if(busy){waitMsg();return}this.disabled=true;
+  call({a:"post",name:me,kind:["遅れ","休み","早退","その他"][[].indexOf.call($("kind").children,k)]||"その他",day:day,text:t},function(){$("text").value="";tab="list";show();window.scrollTo(0,0);say("送りました。受付にメールが届きます")})};
+$("passOk").onclick=function(){var v=$("pass").value.trim().slice(0,6);if(!v){$("pass").focus();return}if(busy){waitMsg();return}pass=v;call({a:"list"})};
 $("pass").addEventListener("keydown",function(e){if(e.key==="Enter")$("passOk").click()});
 $("retry").onclick=function(){stop="";first=true;show();if(pass)call({a:"list"})};
 show();
